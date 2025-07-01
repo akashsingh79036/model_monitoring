@@ -9,6 +9,9 @@ import re
 import string
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from prometheus_client import Summary, Counter
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from prometheus_client import make_wsgi_app
 
 def lemmatization(text):
     """Lemmatize the text."""
@@ -63,24 +66,57 @@ def normalize_text(text):
     return text
 
 
+# define the metrics
+RESPONSE_LATENCY = Summary(name="response_latency_seconds",
+                  documentation="Latency of prediction requests in seconds")
+
+TOKENS_COUNTER = Counter(name="input_tokens_total",
+                  documentation="Total number of tokens processed in prediction requests")
+
+HAPPY_COUNTER = Counter(name="happy_predictions_total",
+                  documentation="Total number of happy predictions made")
+
+SAD_COUNTER = Counter(name="sad_predictions_total",
+                  documentation="Total number of sad predictions made")
+
+
+# make the flask app
 app = Flask(__name__)
+
+# Add prometheus wsgi middleware to route /metrics requests
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
 
 # load model 
 model = pickle.load(open('models/model.pkl','rb'))
 
 vectorizer = pickle.load(open('models/vectorizer.pkl','rb'))
 
+def count_tokens(tokens):
+    """Process tokens and update the token counter"""
+    number_of_tokens = len(tokens)
+    # Increment the tokens counter
+    TOKENS_COUNTER.inc(number_of_tokens)  
+    
+    
 @app.route('/')
 def home():
     return render_template('index.html',result=None)
 
 @app.route('/predict', methods=['POST'])
+@RESPONSE_LATENCY.time()  # Measure the latency of the prediction request
 def predict():
 
     text = request.form['text']
 
     # clean
     text = normalize_text(text)
+    
+    # split the text into tokens
+    tokens = text.split(" ")
+    # count tokens
+    count_tokens(tokens)
 
     # bow
     features = vectorizer.transform([text])
@@ -91,9 +127,15 @@ def predict():
 
     # prediction
     result = model.predict(features_df)
+    
+    # get the result
+    if result[0] == 1:
+        HAPPY_COUNTER.inc()  # Increment happy predictions counter
+    elif result[0] == 0:
+        SAD_COUNTER.inc()  # Increment sad predictions counter
 
     # show
     return render_template('index.html', result=result[0])
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    app.run(port=8000)
