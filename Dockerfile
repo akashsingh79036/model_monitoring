@@ -1,15 +1,17 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY flask_app/ /app/
-
 COPY models/vectorizer.pkl /app/models/vectorizer.pkl
+
+COPY models/model.pkl /app/models/model.pkl
+
+COPY flask_app/ /app/
 
 RUN pip install -r requirements.txt
 
 RUN python -m nltk.downloader stopwords wordnet
 
-EXPOSE 5000
+EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+CMD ["python", "app.py"]
