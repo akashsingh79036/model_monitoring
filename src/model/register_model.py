@@ -19,6 +19,7 @@ repo_owner = "akashsingh79036"
 repo_name = "model_monitoring"
 
 #add report directory
+os.makedirs('reports', exist_ok=True)
 
 # Set up MLflow tracking URI
 mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
