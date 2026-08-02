@@ -3,7 +3,7 @@ nltk
 numpy
 pandas
 gunicorn
-prometheus-client
+prometheus_client
 scikit-learn
 mlflow
 dagshub
