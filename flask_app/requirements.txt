@@ -5,3 +5,5 @@ pandas
 gunicorn
 prometheus-client
 scikit-learn
+mlflow
+dagshub
