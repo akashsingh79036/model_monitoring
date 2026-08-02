@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import re
 import string
+import os
+import mlflow
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from prometheus_client import Summary, Counter
@@ -87,6 +89,35 @@ app = Flask(__name__)
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/metrics': make_wsgi_app()
 })
+
+# Set up DagsHub credentials for MLflow tracking
+dagshub_token = os.getenv("DAGSHUB_PAT")
+if not dagshub_token:
+    raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
+
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+dagshub_url = "https://dagshub.com"
+repo_owner = "akashsingh79036"
+repo_name = "model_monitoring"
+
+# Set up MLflow tracking URI
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+
+def get_latest_model_version(model_name):
+    client = mlflow.MlflowClient()
+    latest_version = client.get_latest_versions(model_name, stages=["Production"])
+    if not latest_version:
+        latest_version = client.get_latest_versions(model_name, stages=["None"])
+    return latest_version[0].version if latest_version else None
+
+model_name = "my_model"
+model_version = get_latest_model_version(model_name)
+
+model_uri = f'models:/{model_name}/{model_version}'
+model = mlflow.pyfunc.load_model(model_uri)
+
 
 # load model 
 model = pickle.load(open('models/model.pkl','rb'))
