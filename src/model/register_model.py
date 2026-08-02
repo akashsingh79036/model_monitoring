@@ -7,6 +7,8 @@ import os
 import dagshub
 
 # Set up DagsHub credentials for MLflow tracking
+
+# Set up DagsHub credentials for MLflow tracking
 dagshub_token = os.getenv("DAGSHUB_PAT")
 if not dagshub_token:
     raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
@@ -18,12 +20,8 @@ dagshub_url = "https://dagshub.com"
 repo_owner = "akashsingh79036"
 repo_name = "model_monitoring"
 
-#add report directory
-os.makedirs('reports', exist_ok=True)
-
 # Set up MLflow tracking URI
 mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
-
 
 # logging configuration
 logger = logging.getLogger('model_registration')
@@ -79,7 +77,7 @@ def register_model(model_name: str, model_info: dict):
 
 def main():
     try:
-        model_info_path = 'reports/experiment_info.json'
+        model_info_path = 'reports/model_info.json'
         model_info = load_model_info(model_info_path)
         
         model_name = "my_model"
