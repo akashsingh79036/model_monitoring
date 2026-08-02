@@ -66,7 +66,7 @@ jobs:
       - name: Tag Docker image
         if: success()
         run: |
-          docker tag supi_ecr:latest 905418184838.dkr.ecr.ap-south-1.amazonaws.com/supi_ecr:latest
+          docker tag akashsingh79036/sentiment-analysis:latest 905418184838.dkr.ecr.ap-south-1.amazonaws.com/supi_ecr:latest
 
       - name: Push Docker image to AWS ECR
         if: success()
